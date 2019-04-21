@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define CREATOR "# CREATOR: Image Processing usind C-Ansi\n"
 
@@ -120,7 +122,7 @@ image img_readpgm(char *name, int *nr, int *nc, int *ml)
  *   nc = number of columns
  *   ml = max grayscale level
  *-------------------------------------------------------------------------*/
-void img_pgmwrite (image img, char *name, int nr, int nc, int ml)
+void img_writepgm (image img, char *name, int nr, int nc, int ml)
 {
     int i, j, x, k, values_per_lines = 16;
     FILE *fimg;
@@ -132,20 +134,20 @@ void img_pgmwrite (image img, char *name, int nr, int nc, int ml)
     {
         fputs("P2\n", fimg);
         fputs(CREATOR, fimg);
-        fprintf(fimg, "%d  %d\n", nc, nl);
-        fprintf(fimg, "%d\n", mn);
-        for (i = 0, k = 0; i < nl; i++)
+        fprintf(fimg, "%d  %d\n", nc, nr);
+        fprintf(fimg, "%d\n", ml);
+        for (i = 0, k = 0; i < nr; i++)
             for (j = 0; j < nc; j++)
             {
-                x = *(I + i * nc + j);
-                fprintf(arq, "%3d ", x);
+                x = img[i * nc + j];
+                fprintf(fimg, "%3d ", x);
                 k++;
-                if (k > valores_por_linha)
+                if (k > values_per_lines)
                 {
-                    fprintf(arq, "\n");
+                    fprintf(fimg, "\n");
                     k = 0;
                 }
             }
     }
-    fclose(arq);
+    fclose(fimg);
 }
