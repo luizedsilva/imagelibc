@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------
  * Image Processing using C-Ansi
  *   Program: Negative from grayscale image
- * Por Luiz Eduardo da Silva.
+ * By Luiz Eduardo da Silva.
  *-------------------------------------------------------------------------*/
 
 #include <stdio.h>
