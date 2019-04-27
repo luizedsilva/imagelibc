@@ -77,10 +77,10 @@ image img_readpgm(char *name, int *nr, int *nc, int *ml)
 
     /*--- Comment lines ---*/
     fgets(lines, 80, fimg);
-    do
+    while (strchr(lines, '#'))
     {
         fgets(lines, 80, fimg);
-    } while (strchr(lines, '#'));
+    }
     sscanf(lines, "%d %d", nc, nr);
     fscanf(fimg, "%d", ml);
 

@@ -12,9 +12,9 @@
 void graytone(image In, image Out, int nl, int nc, int mn, float factor)
 {
     int i, j;
-    float T[mn];
-    for (i = 0; i < mn; i++)
-        T[i] = (float)pow(i, factor) / pow(mn, factor) * mn;
+    double T[mn+1];
+    for (i = 0; i < mn+1; i++)
+        T[i] = pow(i, factor) / pow(mn, factor) * (mn - factor);
     for (i = 0; i < nl; i++)
         for (j = 0; j < nc; j++)
         {
