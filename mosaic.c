@@ -59,14 +59,21 @@ void error(char *s)
  * main function
  *-------------------------------------------------------------------------*/
 
+typedef struct {
+    int nrows, ncols, maxl;
+    char *filename;
+    image icon;
+} imgtype;
 
+typedef imgtype *ptimg;
 
 int main(void)
 {
     FILE *arq;
-    int ntones, nrows, ncols, nfiles, i, j, y, x, nr, nc, ml, tone;
-    char *filenames[20], name[102], command[100];
-    image *icon, *imgtone, In, Out;
+    int tone, ntones, nrows, ncols, nfiles, i, j, y, x;
+    char name[102], command[100];
+    image *imgtone, In, Out;
+    ptimg imginfo;
 
    /*-------------------------------------------
     * Read data from config.txt
@@ -78,11 +85,16 @@ int main(void)
 
     if (nfiles > 20)
         error("Max. files number exceeded!");
+
+    imginfo = malloc (nfiles * sizeof(imgtype));
+    if (!imginfo)
+        error("Image info structure creation error!");
+
     for (i = 0; i < nfiles; i++)
     {
         fscanf(arq, "%s", name);
-        filenames[i] = malloc(strlen(name) * sizeof(char));
-        strcpy(filenames[i], name);
+        imginfo[i].filename = malloc(strlen(name) * sizeof(char));
+        strcpy(imginfo[i].filename, name);
         //puts(name);
     }
     fclose(arq);
@@ -90,19 +102,17 @@ int main(void)
    /*-------------------------------------------
     * Iconize images
     *-------------------------------------------*/
-    icon = malloc(nfiles * sizeof(image));
-    if (!icon)
-        error("Icon vector creation error!");
+
     for (i = 0; i < nfiles; i++)
     {
-        In = img_readpgm(filenames[i], &nr, &nc, &ml);
-        //puts (filenames[i]);
+        In = img_readpgm(imginfo[i].filename, &imginfo[i].nrows, &imginfo[i].ncols, &imginfo[i].maxl);
+        //puts (imginfo[i].filenames);
         if (!In)
             error("Image read pgm error!");
-        icon[i] = img_alloc(nrows, ncols);
-        if (!icon[i])
+        imginfo[i].icon = img_alloc(nrows, ncols);
+        if (!imginfo[i].icon)
             error("Icon image creation error!");
-        iconize(In, icon[i], nr, nc, ml, nrows, ncols);
+        iconize(In, imginfo[i].icon, imginfo[i].nrows, imginfo[i].ncols, imginfo[i].maxl, nrows, ncols);
         img_free(&In);
     }
 
@@ -115,14 +125,14 @@ int main(void)
         error("Tone image creation error!");
     for (tone = 0; tone < ntones; tone++)
     {
-        int iconsorted = rand() % (nfiles-1) + 1; // skip de fisrt image
+        int isorted = rand() % (nfiles-1) + 1; // skip de fisrt image
         //printf ("Icon sorted = %d\n", iconsorted);
-        int tonecalculated = calctone(icon[iconsorted], nrows, ncols, ml, ntones+1);
-        int value = (tone - tonecalculated) * ml / (ntones+1);
+        int tonecalculated = calctone(imginfo[isorted].icon, nrows, ncols, imginfo[isorted].maxl, ntones+1);
+        int value = (tone - tonecalculated) * imginfo[isorted].maxl/ (ntones+1);
         imgtone[tone] = img_alloc(nrows, ncols);
         if (!imgtone[tone])
             error("Tone image creation error!");
-        createimgtone(icon[iconsorted], imgtone[tone], nrows, ncols, ml, value);
+        createimgtone(imginfo[isorted].icon, imgtone[tone], nrows, ncols, imginfo[isorted].maxl, value);
     }
 
    /*-------------------------------------------
@@ -134,7 +144,7 @@ int main(void)
     for (i = 0; i < nrows; i++)
         for (j = 0; j < ncols; j++)
         {
-            tone = (float)icon[0][i * ncols + j] / ml * (ntones-1); // pixels of first image listed
+            tone = (float)imginfo[0].icon[i * ncols + j]/ imginfo[0].maxl * (ntones-1); // pixels of first image listed
             //printf ("%2d", tone);
             if (tone < 0 || tone >= ntones)
                 error ("Range tones image error!");
@@ -142,8 +152,8 @@ int main(void)
                 for (x = 0; x < ncols; x++) 
                     Out[(i * nrows + y) * ncols * ncols + j * ncols + x] = imgtone[tone][y * ncols + x];
         }
-    sprintf(name, "%s-mosaic.pgm", filenames[0]);
-    img_writepgm(Out, name, nrows * nrows, ncols * ncols, ml);
+    sprintf(name, "%s-mosaic.pgm", imginfo[0].filename);
+    img_writepgm(Out, name, nrows * nrows, ncols * ncols, imginfo[0].maxl);
     sprintf(command, "eog %s &", name);
     system(command);
     return 0;
