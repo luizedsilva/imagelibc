@@ -10,14 +10,10 @@
 
 void iconize(image In, image Out, int nl, int nc, int mn, int ny, int nx)
 {
-    int i, j;
-    int py = nl / (ny - 1);
-    int px = nc / (nx - 1);
-    for (i = 0; i < ny; i++)
-        for (j = 0; j < nx; j++)
-        {
-            Out[i * nx + j] = In[i * py * nc + j * px];
-        }
+    int i, j, y, x;
+    for (i = 0, y = 0; i < ny; i++, y += (float)nl / (ny+1))
+        for (j = 0, x = 0; j < nx; j++, x += (float)nc / (nx+1))
+            Out[i * nx + j] = In[y * nc + x];
 }
 
 void msg(char *s)
@@ -44,8 +40,8 @@ int main(int argc, char *argv[])
     else
     {
         In = img_readpgm(argv[1], &nr, &nc, &ml);
-        ny = atoi (argv[2]);
-        nx = atoi (argv[3]);
+        ny = atoi(argv[2]);
+        nx = atoi(argv[3]);
         if (In)
         {
             printf("\nImage negative");
@@ -53,7 +49,7 @@ int main(int argc, char *argv[])
             Out = img_alloc(ny, nx);
 
             /*-- transformation --*/
-            iconize (In, Out, nr, nc, ml, ny, nx);
+            iconize(In, Out, nr, nc, ml, ny, nx);
 
             sprintf(name, "%s-%s", argv[1], "icon.pgm");
             img_writepgm(Out, name, ny, nx, ml);

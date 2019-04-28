@@ -2,6 +2,7 @@
 *.[oa]
 *~
 *.pgm
+*.zip
 .vscode/*
 negative
 median

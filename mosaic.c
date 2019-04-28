@@ -40,10 +40,10 @@
 
 void iconize(image In, image Out, int nl, int nc, int mn, int ny, int nx)
 {
-    int i, j;
-    for (i = 0; i < ny; i++)
-        for (j = 0; j < nx; j++)
-            Out[i * nx + j] = In[i * (nl / (ny - 1)) * nc + j * nc / (nx - 1)];
+    int i, j, y, x;
+    for (i = 0, y = 0; i < ny; i++, y += (float)nl / (ny+1))
+        for (j = 0, x = 0; j < nx; j++, x += (float)nc / (nx+1))
+            Out[i * nx + j] = In[y * nc + x];
 }
 
 int calctone(image In, int nl, int nc, int mn, int ntones)
@@ -127,9 +127,9 @@ int main(void)
     ERROR(!imgtone, msg("Tone's image vector creation error!"));
     for (tone = 0; tone < ntones; tone++)
     {
-        int isorted = rand() % (nfiles - 1) + 1; // skip de fisrt image
-        int tonecalculated = calctone(imginfo[isorted].icon, nrows, ncols, imginfo[isorted].maxl, ntones + 1);
-        int value = (tone - tonecalculated) * imginfo[isorted].maxl / (ntones + 1);
+        int isorted = rand() % (nfiles - 1) + 1; // skip de first image
+        int calculatedtone = calctone(imginfo[isorted].icon, nrows, ncols, imginfo[isorted].maxl, ntones + 1);
+        int value = (tone - calculatedtone) * imginfo[isorted].maxl / (ntones + 1);
         imgtone[tone] = img_alloc(nrows, ncols);
         ERROR(!imgtone[tone], msg("Tone image creation error!"));
         createimgtone(imginfo[isorted].icon, imgtone[tone], nrows, ncols, imginfo[isorted].maxl, value);
