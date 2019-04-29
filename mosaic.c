@@ -34,10 +34,17 @@
 #include <time.h>
 #include "imagelib.h"
 
-#define ERROR(x, y) \
-    if (x)          \
-    y
-
+/*-------------------------------------------------------------------------
+ * Iconize image
+ * Params:
+ *   In = Input image
+ *   Out= Output image (icon)
+ *   nl = number of rows
+ *   nc = number of columns
+ *   mn = max grayscale level
+ *   ny = number of icon's rows
+ *   nx = number of icon's columns
+ *-------------------------------------------------------------------------*/
 void iconize(image In, image Out, int nl, int nc, int mn, int ny, int nx)
 {
     int i, j, y, x;
@@ -46,6 +53,15 @@ void iconize(image In, image Out, int nl, int nc, int mn, int ny, int nx)
             Out[i * nx + j] = In[y * nc + x];
 }
 
+/*-------------------------------------------------------------------------
+ * calculates the average hue in the image
+ * Params:
+ *   In = Input image
+ *   nl = number of rows
+ *   nc = number of columns
+ *   mn = max grayscale level
+ *   ntones = scale of tones
+ *-------------------------------------------------------------------------*/
 int calctone(image In, int nl, int nc, int mn, int ntones)
 {
     int i, sum;
@@ -54,6 +70,16 @@ int calctone(image In, int nl, int nc, int mn, int ntones)
     return ((float)sum / (nl * nc) / mn) * ntones;
 }
 
+/*-------------------------------------------------------------------------
+ * creates an image for a given hue value
+ * Params:
+ *   In = Input image
+ *   Out= Output image
+ *   nl = number of rows
+ *   nc = number of columns
+ *   mn = max grayscale level
+ *   value = hue value
+ *-------------------------------------------------------------------------*/
 void createimgtone(image In, image Out, int nl, int nc, int mn, int value)
 {
     int i;
@@ -66,12 +92,9 @@ void createimgtone(image In, image Out, int nl, int nc, int mn, int value)
     }
 }
 
-void msg(char *s)
-{
-    puts(s);
-    exit(10);
-}
-
+/*-------------------------------------------------------------------------
+ * structure for images icons
+ *-------------------------------------------------------------------------*/
 typedef struct
 {
     int nrows, ncols, maxl;
@@ -94,12 +117,12 @@ int main(void)
     /*-------------------------------------------
     * Read data from config.txt
     *-------------------------------------------*/
-    ERROR((arq = fopen("config.txt", "rt")) == NULL, msg("File <config.txt> not found!"));
+    ERROR((arq = fopen("config.txt", "rt")) == NULL, errormsg("File <config.txt> not found!"));
     fscanf(arq, "%d %d %d", &ntones, &nrows, &ncols);
     fscanf(arq, "%d ", &nfiles);
-    ERROR(nfiles > 20, msg("Maximum files number exceeded!"));
+    ERROR(nfiles > 20, errormsg("Maximum files number exceeded!"));
     imginfo = malloc(nfiles * sizeof(imgtype));
-    ERROR(!imginfo, msg("Image info structure creation error!"));
+    ERROR(!imginfo, errormsg("Image info structure creation error!"));
     for (i = 0; i < nfiles; i++)
     {
         fscanf(arq, "%s", name);
@@ -113,9 +136,8 @@ int main(void)
     for (i = 0; i < nfiles; i++)
     {
         In = img_readpgm(imginfo[i].filename, &imginfo[i].nrows, &imginfo[i].ncols, &imginfo[i].maxl);
-        ERROR(!In, msg("PGM Image read error!"));
         imginfo[i].icon = img_alloc(nrows, ncols);
-        ERROR(!imginfo[i].icon, msg("Icon image creation error!"));
+        ERROR(!imginfo[i].icon, errormsg("Icon image creation error!"));
         iconize(In, imginfo[i].icon, imginfo[i].nrows, imginfo[i].ncols, imginfo[i].maxl, nrows, ncols);
         img_free(&In);
     }
@@ -124,26 +146,26 @@ int main(void)
     *-------------------------------------------*/
     srand((unsigned)time(NULL));
     imgtone = malloc(ntones * sizeof(image));
-    ERROR(!imgtone, msg("Tone's image vector creation error!"));
+    ERROR(!imgtone, errormsg("Tone's image vector creation error!"));
     for (tone = 0; tone < ntones; tone++)
     {
         int isorted = rand() % (nfiles - 1) + 1; // skip de first image
         int calculatedtone = calctone(imginfo[isorted].icon, nrows, ncols, imginfo[isorted].maxl, ntones + 1);
         int value = (tone - calculatedtone) * imginfo[isorted].maxl / (ntones + 1);
         imgtone[tone] = img_alloc(nrows, ncols);
-        ERROR(!imgtone[tone], msg("Tone image creation error!"));
+        ERROR(!imgtone[tone], errormsg("Tone [%d] image creation error!", tone));
         createimgtone(imginfo[isorted].icon, imgtone[tone], nrows, ncols, imginfo[isorted].maxl, value);
     }
     /*-------------------------------------------
     * Create mosaic
     *-------------------------------------------*/
     Out = img_alloc(nrows * nrows, ncols * ncols);
-    ERROR(!Out, msg("Out image creation error!"));
+    ERROR(!Out, errormsg("Out image creation error!"));
     for (i = 0; i < nrows; i++)
         for (j = 0; j < ncols; j++)
         {
             tone = (float)imginfo[0].icon[i * ncols + j] / imginfo[0].maxl * (ntones - 1); // pixels of first listed image
-            ERROR(tone < 0 || tone >= ntones, msg("Tone range error!"));
+            ERROR(tone < 0 || tone >= ntones, errormsg("Tone [%d] range error!", tone));
             for (y = 0; y < nrows; y++)
                 for (x = 0; x < ncols; x++)
                     Out[((i * nrows + y) * ncols + j) * ncols + x] = imgtone[tone][y * ncols + x];

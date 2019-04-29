@@ -1,10 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
-#define CREATOR "# CREATOR: Image Processing usind C-Ansi\n"
-
-typedef int *image;
+#include "imagelib.h"
 
 /*-------------------------------------------------------------------------
  * Image allocation and free routines
@@ -39,8 +38,32 @@ void img_info(char *name, int nr, int nc, int ml)
 }
 
 /*-------------------------------------------------------------------------
+ * Error message
+ *   str - string message control
+ *   ... - parameters
+ *-------------------------------------------------------------------------*/
+void errormsg(char *str, ...)
+{
+    char format[255];
+    va_list arg;
+    va_start(arg, str);
+    sprintf(format, "ERROR: %s\n\n", str);
+    vprintf(format, arg);
+    va_end(arg);
+    exit(1);
+}
+
+/*-------------------------------------------------------------------------
  * Read pgm image
- *   PGM format:
+ * Params:
+ *   img = image
+ *   name = image file name
+ *   nr = number of rows
+ *   nc = number of columns
+ *   ml = max grayscale level
+ * 
+ * PGM format:
+ * -----------
  * P2
  * # CREATOR: Image Processing usind C-Ansi
  * 124 122
@@ -52,7 +75,7 @@ void img_info(char *name, int nr, int nc, int ml)
  * Line 2: Lines begins with # are comment
  * Line 3: Numbers of columns and rows
  * Line 4: Max grayscale value
- * Line 5...: Pixel value of image
+ * Line 5 (...): Pixels values of image
  *-------------------------------------------------------------------------+*/
 image img_readpgm(char *name, int *nr, int *nc, int *ml)
 {
@@ -60,56 +83,27 @@ image img_readpgm(char *name, int *nr, int *nc, int *ml)
     char c, lines[100];
     image img;
     FILE *fimg;
-
-    if ((fimg = fopen(name, "r")) == NULL)
-    {
-        printf("File open error: <%s>\n\n", name);
-        return NULL;
-    }
-
+    ERROR((fimg = fopen(name, "r")) == NULL, errormsg("File open error: <%s>", name));
     /*--- PGM = "P2" ---*/
     fgets(lines, 80, fimg);
-    if (!strstr(lines, "P2"))
-    {
-        printf("File image format error: <%s>\n\n", name);
-        return NULL;
-    }
-
+    ERROR(!strstr(lines, "P2"), errormsg("File image format error: <%s>", name));
     /*--- Comment lines ---*/
     fgets(lines, 80, fimg);
     while (strchr(lines, '#'))
-    {
         fgets(lines, 80, fimg);
-    }
     sscanf(lines, "%d %d", nc, nr);
     fscanf(fimg, "%d", ml);
-
-    if (*nc == 0 || *nr == 0 || *ml == 0)
-    {
-        printf("Image dimensions error: <%s>\n\n", name);
-        return NULL;
-    }
-
+    ERROR(*nc == 0 || *nr == 0 || *ml == 0, errormsg("Image dimensions error: <%s>", name));
     img = img_alloc(*nr, *nc);
-    if (!img)
-        printf("Image allocation error: %s\n\n img_readpgm routine\n\n", name);
-    else
-    {
-        for (i = 0; i < *nr; i++)
+    ERROR(!img, errormsg("Image allocation error: %s\n\n img_readpgm routine", name));
+    for (i = 0; i < *nr; i++)
+        for (j = 0; j < *nc; j++)
         {
-            for (j = 0; j < *nc; j++)
-            {
-                fscanf(fimg, "%d", &k);
-                if (k > *ml)
-                {
-                    printf("Max grayscale image error: <%s>\n", name);
-                    return NULL;
-                }
-                img[i * (*nc) + j] = k;
-            }
+            fscanf(fimg, "%d", &k);
+            ERROR(k > *ml, errormsg("Max grayscale image error: <%s>", name));
+            img[i * (*nc) + j] = k;
         }
-    }
-    fclose (fimg);
+    fclose(fimg);
     return img;
 }
 
@@ -122,32 +116,26 @@ image img_readpgm(char *name, int *nr, int *nc, int *ml)
  *   nc = number of columns
  *   ml = max grayscale level
  *-------------------------------------------------------------------------*/
-void img_writepgm (image img, char *name, int nr, int nc, int ml)
+void img_writepgm(image img, char *name, int nr, int nc, int ml)
 {
     int i, j, x, k, values_per_lines = 16;
     FILE *fimg;
-    if ((fimg = fopen(name, "wt")) == NULL)
-    {
-        printf("Image creation error: <%s>\n\n", name);
-    }
-    else
-    {
-        fputs("P2\n", fimg);
-        fputs(CREATOR, fimg);
-        fprintf(fimg, "%d  %d\n", nc, nr);
-        fprintf(fimg, "%d\n", ml);
-        for (i = 0, k = 0; i < nr; i++)
-            for (j = 0; j < nc; j++)
+    ERROR((fimg = fopen(name, "wt")) == NULL, errormsg("Image creation error: <%s>", name));
+    fputs("P2\n", fimg);
+    fputs(CREATOR, fimg);
+    fprintf(fimg, "%d  %d\n", nc, nr);
+    fprintf(fimg, "%d\n", ml);
+    for (i = 0, k = 0; i < nr; i++)
+        for (j = 0; j < nc; j++)
+        {
+            x = img[i * nc + j];
+            fprintf(fimg, "%3d ", x);
+            k++;
+            if (k > values_per_lines)
             {
-                x = img[i * nc + j];
-                fprintf(fimg, "%3d ", x);
-                k++;
-                if (k > values_per_lines)
-                {
-                    fprintf(fimg, "\n");
-                    k = 0;
-                }
+                fprintf(fimg, "\n");
+                k = 0;
             }
-    }
+        }
     fclose(fimg);
 }
