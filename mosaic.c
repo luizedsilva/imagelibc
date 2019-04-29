@@ -4,7 +4,7 @@
  * 
  * By Luiz Eduardo da Silva.
  * 
- * Use 'config.txt' file which should be organized as follows:
+ * It use 'config.txt' file which may be organized as follows:
  *  + The first line of the file must contain three numbers that define
  *    the NTONES number of grayscale tiles, the NROWS number of rows
  *    and the NCOLS number of mosaic columns and images that will be
@@ -41,8 +41,8 @@
 void iconize(image In, image Out, int nl, int nc, int mn, int ny, int nx)
 {
     int i, j, y, x;
-    for (i = 0, y = 0; i < ny; i++, y += (float)nl / (ny+1))
-        for (j = 0, x = 0; j < nx; j++, x += (float)nc / (nx+1))
+    for (i = 0, y = 0; i < ny; i++, y += (float)nl / (ny + 1))
+        for (j = 0, x = 0; j < nx; j++, x += (float)nc / (nx + 1))
             Out[i * nx + j] = In[y * nc + x];
 }
 
@@ -142,15 +142,23 @@ int main(void)
     for (i = 0; i < nrows; i++)
         for (j = 0; j < ncols; j++)
         {
-            tone = (float)imginfo[0].icon[i * ncols + j] / imginfo[0].maxl * (ntones - 1); // pixels of first image listed
+            tone = (float)imginfo[0].icon[i * ncols + j] / imginfo[0].maxl * (ntones - 1); // pixels of first listed image
             ERROR(tone < 0 || tone >= ntones, msg("Tone range error!"));
             for (y = 0; y < nrows; y++)
                 for (x = 0; x < ncols; x++)
-                    Out[(i * nrows + y) * ncols * ncols + j * ncols + x] = imgtone[tone][y * ncols + x];
+                    Out[((i * nrows + y) * ncols + j) * ncols + x] = imgtone[tone][y * ncols + x];
         }
     sprintf(name, "%s-mosaic.pgm", imginfo[0].filename);
     img_writepgm(Out, name, nrows * nrows, ncols * ncols, imginfo[0].maxl);
     sprintf(command, "eog %s &", name);
     system(command);
+    img_free(&Out);
+    for (i = 0; i < nfiles; i++)
+    {
+        free(imginfo[i].filename);
+        img_free(&imginfo[i].icon);
+    }
+    for (tone = 0; tone < ntones; tone++)
+        img_free(&imgtone[tone]);
     return 0;
 }
