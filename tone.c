@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
         scale = atoi(argv[2]);
         if (In)
         {
-            printf("\nChange tone for grayscale image");
+            printf("\nCreate tones grayscale images");
             img_info(argv[1], nr, nc, ml);
             Out = img_alloc(nr, nc);
 

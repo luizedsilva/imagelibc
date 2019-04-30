@@ -86,7 +86,7 @@ void createimgtone(image In, image Out, int nl, int nc, int mn, int value)
     for (i = 0; i < nl * nc; i++)
     {
         int sum = value + In[i];
-        sum = sum > 255 ? 255 : sum;
+        sum = sum > mn ? mn : sum;
         sum = sum < 0 ? 0 : sum;
         Out[i] = sum;
     }
