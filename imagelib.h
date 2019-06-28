@@ -2,9 +2,7 @@
 
 typedef int *image;
 
-#define ERROR(x, y) \
-    if (x)          \
-    y
+#define ERROR(x, y) if (x) y
 
 void errormsg(char *str, ...);
 image img_alloc(int nr, int nc);
